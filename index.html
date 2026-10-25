@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0d12">
+  <meta name="description" content="ModuBot — configure les modules de ton bot Discord depuis un tableau de bord clair et élégant.">
+  <title>ModuBot — Ton bot, à ta façon</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7L12 2Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2L6.9 12l1.4-2.4 1.7.7a8 8 0 0 1 1.7-1L12 7.5h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 1.9Z" transform="translate(-1.4 -2.5)"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1V10Z"/></symbol>
+    <symbol id="i-log" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m18 6-12 12M6 6l12 12"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-bot" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M12 3v4M8 13h.01M16 13h.01M9 17h6"/><path d="M2 12h1m18 0h1"/></symbol>
+  </svg>
+
+  <main id="landing" class="landing-screen">
+    <header class="topbar wrap">
+      <a class="brand" href="#top" aria-label="ModuBot, accueil"><span class="brand-mark"><svg><use href="#i-spark"/></svg></span><span>modu<span class="brand-accent">bot</span></span></a>
+      <nav class="top-links" aria-label="Navigation principale">
+        <a href="#modules">Modules</a><a href="#comment-ca-marche">Comment ça marche</a><a href="#securite">Sécurité</a>
+      </nav>
+      <div class="top-actions"><button class="button button-quiet" data-auth="login">Connexion</button><button class="button button-small" data-auth="signup">Créer un compte <svg><use href="#i-arrow"/></svg></button></div>
+      <button class="mobile-menu icon-button" aria-label="Ouvrir le menu" id="mobile-menu"><svg><use href="#i-menu"/></svg></button>
+    </header>
+
+    <section class="hero wrap" id="top">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> Ton serveur. Tes règles. Ton bot.</div>
+        <h1>Un bot qui te ressemble.<br><span>Sans te prendre la tête.</span></h1>
+        <p class="hero-subtitle">Active les modules dont tu as besoin, règle tes commandes et garde le contrôle depuis un seul tableau de bord.</p>
+        <div class="hero-actions"><button class="button button-primary" data-auth="signup">Créer mon espace <svg><use href="#i-arrow"/></svg></button><button class="button button-ghost" data-action="demo"><span class="play-icon">▶</span> Voir la démo</button></div>
+        <div class="hero-proof"><div class="avatar-stack"><span>M</span><span>J</span><span>A</span><span>+</span></div><p><b>Simple dès le départ</b><br><span>Une interface pensée pour tout le monde</span></p></div>
+      </div>
+      <div class="hero-visual" aria-label="Aperçu du tableau de bord ModuBot">
+        <div class="visual-glow"></div>
+        <div class="dashboard-preview">
+          <div class="preview-sidebar"><div class="preview-logo"><i></i><span>modubot</span></div><div class="preview-label">ESPACE</div><div class="preview-nav active"><span class="mini-icon">⌂</span> Vue d'ensemble</div><div class="preview-nav"><span class="mini-icon">◈</span> Modules</div><div class="preview-nav"><span class="mini-icon">⌘</span> Commandes</div><div class="preview-nav"><span class="mini-icon">≋</span> Journaux</div><div class="preview-server"><span class="server-icon">A</span><span><b>Astéria Studio</b><small>Serveur Discord</small></span><span class="online-dot"></span></div></div>
+          <div class="preview-main"><div class="preview-header"><div><small>DIMANCHE 25 OCTOBRE</small><h3>Salut, Camille <span>✦</span></h3></div><div class="preview-avatar">C</div></div><div class="preview-stat-row"><div class="preview-stat"><span>ÉTAT DU BOT</span><b><i class="online-dot"></i> En ligne</b></div><div class="preview-stat"><span>MEMBRES</span><b>1 284</b></div><div class="preview-stat"><span>COMMANDES AUJ.</span><b>326</b></div></div><div class="preview-section-title"><span>Modules actifs</span><span class="tiny-link">Tout voir →</span></div><div class="preview-modules"><div class="preview-module"><span class="module-icon purple"><svg><use href="#i-shield"/></svg></span><span><b>Modération</b><small>8 commandes</small></span><i class="switch-on"></i></div><div class="preview-module"><span class="module-icon green"><svg><use href="#i-users"/></svg></span><span><b>Bienvenue</b><small>Message activé</small></span><i class="switch-on"></i></div><div class="preview-module"><span class="module-icon orange"><svg><use href="#i-message"/></svg></span><span><b>Anti-spam</b><small>Protection active</small></span><i class="switch-on"></i></div></div><div class="preview-activity"><span class="activity-mark">✓</span><span><b>Protection activée</b><small>Ton serveur est bien configuré</small></span><span class="activity-time">à l’instant</span></div></div>
+        </div>
+        <div class="float-card float-secure"><span class="secure-check"><svg><use href="#i-check"/></svg></span><span><b>À toi de choisir</b><small>Chaque module est indépendant</small></span></div>
+        <div class="float-card float-live"><span class="live-pulse"></span><span><b>Tout est prêt</b><small>en quelques clics</small></span></div>
+      </div>
+    </section>
+
+    <section class="trust-strip wrap"><span>TOUT CE QU’IL FAUT POUR</span><div><span class="trust-item"><svg><use href="#i-shield"/></svg> Modérer</span><span class="trust-item"><svg><use href="#i-users"/></svg> Accueillir</span><span class="trust-item"><svg><use href="#i-message"/></svg> Protéger</span><span class="trust-item"><svg><use href="#i-terminal"/></svg> Personnaliser</span></div></section>
+
+    <section class="features-section wrap" id="modules">
+      <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span> À LA CARTE</div><h2>Les bons outils.<br><span>Rien de superflu.</span></h2></div><p>Choisis tes modules, règle leurs commandes et adapte ton bot à la vie de ton serveur.</p></div>
+      <div class="feature-grid">
+        <article class="feature-card"><span class="feature-icon purple"><svg><use href="#i-shield"/></svg></span><div class="feature-meta">01 <span>›</span></div><h3>Modération</h3><p>Garde un espace agréable avec les outils adaptés à ta communauté.</p><div class="feature-tags"><span>ban</span><span>mute</span><span>warn</span></div></article>
+        <article class="feature-card"><span class="feature-icon mint"><svg><use href="#i-users"/></svg></span><div class="feature-meta">02 <span>›</span></div><h3>Bienvenue</h3><p>Accueille les nouveaux membres avec un message à ton image.</p><div class="feature-tags"><span>message</span><span>rôle auto</span></div></article>
+        <article class="feature-card"><span class="feature-icon coral"><svg><use href="#i-message"/></svg></span><div class="feature-meta">03 <span>›</span></div><h3>Protection</h3><p>Réduis le spam et garde un œil sur les événements du serveur.</p><div class="feature-tags"><span>anti-spam</span><span>anti-raid</span></div></article>
+        <article class="feature-card"><span class="feature-icon blue"><svg><use href="#i-terminal"/></svg></span><div class="feature-meta">04 <span>›</span></div><h3>Commandes</h3><p>Active les commandes utiles et choisis le préfixe qui te convient.</p><div class="feature-tags"><span>prefix</span><span>personnalisé</span></div></article>
+      </div>
+      <div class="feature-extra"><span>ET AUSSI</span><div><b>Rôles</b><i>·</i><b>Niveaux</b><i>·</i><b>Jeux</b><i>·</i><b>Sondages</b><i>·</i><b>Giveaways</b><i>·</i><b>Suggestions</b><i>·</i><b>Tickets</b><i>·</i><b>Rappels</b><i>·</i><b>Commandes perso</b></div><small>14 modules · plus de 120 commandes à explorer dans la démo</small></div>
+    </section>
+
+    <section class="how-section" id="comment-ca-marche"><div class="wrap how-inner"><div class="how-copy"><div class="eyebrow"><span class="eyebrow-dot"></span> EN TROIS ÉTAPES</div><h2>Ton espace est prêt<br><span>en un rien de temps.</span></h2><p>Une configuration claire pour commencer sereinement et faire évoluer ton bot avec ton serveur.</p><button class="button button-primary" data-auth="signup">C’est parti <svg><use href="#i-arrow"/></svg></button></div><div class="steps"><div class="step"><span class="step-number">01</span><div><h3>Crée ton espace</h3><p>Prépare ton tableau de bord en quelques instants.</p></div><span class="step-check"><svg><use href="#i-check"/></svg></span></div><div class="step"><span class="step-number">02</span><div><h3>Choisis tes modules</h3><p>Active les fonctions qui correspondent à ton serveur.</p></div><span class="step-check"><svg><use href="#i-check"/></svg></span></div><div class="step"><span class="step-number">03</span><div><h3>Configure ton bot</h3><p>Ajoute les informations de ton application Discord depuis un environnement sécurisé.</p></div><span class="step-check"><svg><use href="#i-check"/></svg></span></div></div></div></section>
+
+    <section class="security-section wrap" id="securite"><div class="security-icon"><svg><use href="#i-lock"/></svg></div><div><div class="eyebrow"><span class="eyebrow-dot"></span> LA SÉCURITÉ D’ABORD</div><h2>Un token de bot,<br><span>ça reste secret.</span></h2><p>Cette maquette ne collecte aucun token. Dans un service en ligne, le token doit être envoyé uniquement à un serveur sécurisé, chiffré et isolé par compte. Ne le colle jamais dans un site de démonstration.</p></div><div class="security-note"><span>✦</span><b>Dans cette démo</b><p>Rien n’est envoyé ni sauvegardé durablement.</p></div></section>
+
+    <section class="final-cta wrap"><div class="cta-orb"></div><div class="eyebrow"><span class="eyebrow-dot"></span> À TOI DE JOUER</div><h2>Prêt à créer ton<br><span>espace Discord ?</span></h2><p>Découvre une façon plus simple de piloter ton bot.</p><button class="button button-primary" data-auth="signup">Créer mon espace <svg><use href="#i-arrow"/></svg></button><small>Maquette interactive · connexion et hébergement réels à configurer</small></section>
+
+    <footer class="footer wrap"><a class="brand" href="#top"><span class="brand-mark"><svg><use href="#i-spark"/></svg></span><span>modu<span class="brand-accent">bot</span></span></a><span>Prototype public · aucun bot réel n’est connecté.</span><a href="#securite">Sécurité <span>↗</span></a></footer>
+  </main>
+
+  <main id="app" class="app-shell hidden" aria-live="polite">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" data-nav="overview"><span class="brand-mark"><svg><use href="#i-spark"/></svg></span><span>modu<span class="brand-accent">bot</span></span></a>
+      <div class="workspace-label">ESPACE DE TRAVAIL</div>
+      <button class="server-switcher" data-action="bot-setup"><span class="server-avatar">A</span><span><b id="server-name">Astéria Studio</b><small>Bot de démonstration</small></span><span class="chevron">⌄</span></button>
+      <div class="side-label">MENU PRINCIPAL</div>
+      <nav class="side-nav" aria-label="Menu du tableau de bord">
+        <button class="side-link active" data-nav="overview"><svg><use href="#i-home"/></svg>Vue d’ensemble</button>
+        <button class="side-link" data-nav="modules"><svg><use href="#i-spark"/></svg>Modules <span class="side-count" id="active-count">3</span></button>
+        <button class="side-link" data-nav="commands"><svg><use href="#i-terminal"/></svg>Commandes</button>
+        <button class="side-link" data-nav="logs"><svg><use href="#i-log"/></svg>Journaux</button>
+      </nav>
+      <div class="side-label side-label-lower">PERSONNALISATION</div>
+      <nav class="side-nav"><button class="side-link" data-nav="settings"><svg><use href="#i-settings"/></svg>Paramètres</button></nav>
+      <div class="sidebar-bottom"><div class="help-card"><span class="help-star">✦</span><b>Besoin d’un coup de main ?</b><p>Tout commence par un module.</p><button data-nav="modules">Explorer les modules <span>→</span></button></div><button class="profile-button" data-action="profile"><span class="profile-avatar" id="profile-initial">C</span><span><b id="profile-name">Camille</b><small>Espace démo</small></span><span class="profile-more">···</span></button></div>
+    </aside>
+
+    <section class="app-main">
+      <header class="app-topbar"><button class="icon-button mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Afficher le menu"><svg><use href="#i-menu"/></svg></button><div class="breadcrumb">Mon espace <span>/</span> <b id="breadcrumb-title">Vue d’ensemble</b></div><div class="app-top-actions"><span class="demo-badge"><i></i> MODE DÉMO</span><button class="button button-small button-outline" data-action="bot-setup"><svg><use href="#i-plus"/></svg> Ajouter un bot</button></div></header>
+      <div class="demo-banner"><span class="banner-icon">✦</span><span><b>Maquette interactive</b> — les changements restent dans cette session. Aucun bot réel n’est connecté.</span><button aria-label="Fermer l’avertissement" id="dismiss-banner"><svg><use href="#i-close"/></svg></button></div>
+      <section id="dashboard-content" class="dashboard-content"></section>
+    </section>
+  </main>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop" role="presentation">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close icon-button" id="modal-close" aria-label="Fermer"><svg><use href="#i-close"/></svg></button>
+      <div id="modal-content"></div>
+    </section>
+  </div>
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
