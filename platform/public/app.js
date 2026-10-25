@@ -553,6 +553,10 @@ async function init() {
     await render();
     await captureReturnedPayPalOrder();
     const params = new URLSearchParams(location.search);
+    if (params.get("auth") === "required") {
+      history.replaceState({}, "", "/");
+      toast("Crée un compte ou connecte-toi pour accéder à ton espace.");
+    }
     if (params.get("error") === "discord-login") toast("La connexion Discord n’a pas abouti. Réessaie.", true);
     if (params.get("paypal") === "cancel") {
       history.replaceState({}, "", "/app");

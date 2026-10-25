@@ -4,7 +4,7 @@ Cette version ajoute un serveur à la maquette visuelle. Elle comprend des compt
 
 ## Ce qui est fonctionnel dans le code
 
-- Inscription avec pseudo, e-mail et mot de passe, puis connexion par e-mail et mot de passe. Le pseudo se choisit à l’inscription ; le mot de passe est stocké sous forme de hachage scrypt salé dans SQLite. Les comptes Discord existants restent compatibles. Une adresse e-mail de contact est demandée pour une commande PayPal manuelle.
+- Inscription avec pseudo, e-mail et mot de passe, puis connexion par e-mail et mot de passe. Le pseudo se choisit à l’inscription ; la connexion ne demande pas de pseudo. Les comptes restent dans SQLite et la session sécurisée reste ouverte jusqu’à 30 jours. Les projets, paiements et API sont protégés par session ; `/app` redirige vers l’accueil si le compte n’est pas connecté. Le mot de passe est stocké sous forme de hachage scrypt salé. Les comptes Discord existants restent compatibles.
 - Création de projets avec un nom et le token secret du bot. Le token est vérifié côté serveur puis chiffré avec AES-256-GCM ; il n’est jamais renvoyé au navigateur ni envoyé dans les journaux. Les commandes utilisent toujours le préfixe slash `/`. Retirer un bot arrête sa connexion et supprime sa clé stockée.
 - Modules réellement disponibles : modération (12 commandes), protection (verrouillage, mode lent et anti-spam activable par serveur), utilitaires (8 commandes), communauté, détente et tickets. Les commandes slash sélectionnées sont synchronisées auprès de Discord après la connexion du bot.
 - Projets sélectionnables dans la barre latérale. Les réglages, modules et quotas sont propres à chaque bot. Utilitaires et Fun sont accessibles gratuitement ; les autres modules sont verrouillés selon le forfait.
@@ -18,7 +18,9 @@ Cette version ajoute un serveur à la maquette visuelle. Elle comprend des compt
 
 ## Ce qui n’est pas encore publié
 
-Le site déjà publié sur GitHub Pages est un hébergement statique. Il ne peut pas exécuter ce serveur Node.js ni maintenir un bot Discord connecté. Les fichiers de cette version sont préparés localement, mais aucun service backend n’a encore été déployé et aucun nom de domaine backend n’a été attribué.
+Le site déjà publié sur GitHub Pages est un hébergement statique. Il ne peut pas exécuter ce serveur Node.js ni maintenir un bot Discord connecté. Le vrai parcours compte/projets nécessite le serveur Node décrit ci-dessous. Aucun service backend n’a encore été déployé et aucun nom de domaine backend n’a été attribué. La maquette statique ne crée pas de vrais comptes et ne doit pas être présentée comme le service en production.
+
+Le navigateur doit recevoir les fichiers HTML, CSS et JavaScript pour afficher un site ; ils peuvent donc toujours être enregistrés par un visiteur. Ne mets jamais de secrets dans le client. Pour ne pas rendre le dépôt source téléchargeable depuis GitHub, il faut le rendre privé, puis le déployer depuis ce dépôt privé sur un hébergeur qui sait accéder aux dépôts privés. Un site web public ne peut pas cacher ses fichiers d’interface aux visiteurs.
 
 Le compte Bot-Hosting ouvert dans le navigateur propose un seul déploiement gratuit avec ressources limitées et renouvellement manuel tous les quatre jours. C’est adapté à un essai très limité, sans engagement de disponibilité ; ce n’est pas une capacité démontrée pour vendre 2, 8 ou 25 bots par client. Le code limite à un bot hébergé au total par défaut via `MAX_HOSTED_BOTS=1`. Les paiements restent désactivés et les forfaits payants sont indisponibles tant que la capacité ne couvre pas les places réservées.
 

@@ -94,7 +94,8 @@ app.use(helmet({
 app.use(cookieSession({
   name: "modubot.session",
   keys: [process.env.SESSION_SECRET],
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  // Keep the account signed in for 30 days; the account itself is stored persistently in SQLite.
+  maxAge: 30 * 24 * 60 * 60 * 1000,
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax"
@@ -115,7 +116,7 @@ function sameOrigin(req, res, next) {
 
 function requireAuth(req, res, next) {
   const id = req.session?.userId;
-  if (!id) return res.status(401).json({ error: "Connecte-toi avec Discord pour continuer." });
+  if (!id) return res.status(401).json({ error: "Crée un compte ou connecte-toi pour continuer." });
   const user = getUser(id);
   if (!user) {
     req.session = null;
@@ -588,7 +589,14 @@ app.post("/api/paypal/capture", requireAuth, sensitiveLimit, async (req, res, ne
   }
 });
 
-app.get("/app", (_req, res) => res.sendFile(path.join(here, "..", "public", "index.html")));
+app.get("/app", (req, res) => {
+  if (!req.session?.userId || !getUser(req.session.userId)) {
+    req.session = null;
+    return res.redirect(303, "/?auth=required");
+  }
+  res.setHeader("Cache-Control", "no-store");
+  res.sendFile(path.join(here, "..", "public", "index.html"));
+});
 app.get("/admin", (_req, res) => res.sendFile(path.join(here, "..", "public", "admin.html")));
 
 app.use((error, _req, res, _next) => {
