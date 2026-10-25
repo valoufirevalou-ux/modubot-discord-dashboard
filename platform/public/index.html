@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10111a">
+  <meta name="description" content="ModuBot · configure et héberge tes bots Discord depuis un espace privé.">
+  <title>ModuBot — Tes bots, ton espace</title>
+  <link rel="preconnect" href="https://cdn.discordapp.com">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="ModuBot, accueil"><span class="brand-mark">✳</span><span>modu<span>bot</span></span></a>
+    <nav class="top-nav" aria-label="Navigation principale">
+      <a href="#modules">Fonctionnalités</a>
+      <a href="#offres">Offres</a>
+      <a href="#confidentialite">Confidentialité</a>
+    </nav>
+    <div class="top-actions" id="top-actions"></div>
+  </header>
+  <main id="root" class="page-shell" aria-live="polite">
+    <div class="loading-card"><span class="spinner"></span><span>Préparation de ton espace…</span></div>
+  </main>
+  <footer class="site-footer">
+    <a class="brand brand-small" href="/"><span class="brand-mark">✳</span><span>modu<span>bot</span></span></a>
+    <span>Un espace privé pour gérer tes bots Discord.</span>
+    <span class="footer-note">Les tokens ne sont jamais affichés dans les journaux Discord.</span>
+    <a class="footer-note" href="/admin">Administration</a>
+  </footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
