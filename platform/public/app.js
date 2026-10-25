@@ -22,7 +22,7 @@ function askContactEmail({ manualPayPal = false } = {}) {
       <h2>Où envoyer ton accès ?</h2>
       <p>Indique ton adresse e-mail de contact. Aucun mot de passe n’est demandé.${manualPayPal ? " Un code unique s’affichera ensuite : ajoute-le dans la note de ton paiement PayPal." : " Elle permettra de retrouver ta demande et de rattacher l’accès à ton compte."}</p>
       <label for="payment-contact-email">Adresse e-mail</label>
-      <input id="payment-contact-email" name="contactEmail" type="email" autocomplete="email" maxlength="254" placeholder="toi@exemple.fr" required>
+      <input id="payment-contact-email" name="contactEmail" type="email" autocomplete="email" maxlength="254" placeholder="toi@exemple.fr" value="${escapeHtml(account?.user?.email || "")}" required>
       <div class="payment-dialog-actions"><button class="button button-outline" type="button" data-cancel-email>Annuler</button><button class="button button-primary" type="submit">Continuer vers PayPal <span>↗</span></button></div>
       <small class="payment-dialog-privacy">Ton e-mail sera visible uniquement dans l’espace administrateur pour rapprocher le paiement et l’accès.</small>
     </form>`;
@@ -56,7 +56,7 @@ function showManualPaymentSteps(payment, planId, contactEmail = "") {
     <button class="payment-dialog-close" type="button" aria-label="Fermer">×</button>
     <span class="eyebrow"><span></span> RÉFÉRENCE PAYPAL.ME</span>
     <h2>Termine ton paiement</h2>
-    <p>${escapeHtml(plan?.name || "Forfait")} · ${money(plan?.priceCents || 0)} pour 30 jours. Le code et l’e-mail sont déjà visibles dans l’admin quand tu cliques sur « Ouvrir PayPal ».</p>
+    <p>${escapeHtml(plan?.name || "Forfait")} · ${money(plan?.priceCents || 0)} pour 30 jours. La demande et le code sont déjà enregistrés dans l’espace admin.</p>
     <label for="paypal-reference">Code à copier dans la note PayPal</label>
     <div class="payment-code-row"><input id="paypal-reference" type="text" value="${escapeHtml(payment.paymentCode)}" readonly aria-label="Code de référence PayPal"><button class="button button-outline" type="button" data-copy-manual-code>Copier le code</button></div>
     <ol class="payment-steps-list"><li><b>Copie le code</b> avec le bouton. Il reste dans ton presse-papiers et active le bouton bleu.</li><li><b>Clique sur « Ouvrir PayPal »</b> : PayPal.Me s’ouvre avec le montant du forfait destiné à FCSTslyz. Vérifie le montant avant de continuer.</li><li><b>Dans PayPal, colle le code dans « Ajouter une note »</b>, puis envoie le paiement. Le site ne peut pas remplir cette note à ta place. Si le type de paiement est proposé, choisis « Biens et services » pour cet achat.</li><li><b>Reviens sur ModuBot</b> et clique sur « J’ai payé » dans ta demande.</li><li><b>L’accès attend une vérification manuelle</b> : le code de la note et le montant doivent correspondre à la transaction reçue dans PayPal.</li></ol>
@@ -100,13 +100,7 @@ function showManualPaymentSteps(payment, planId, contactEmail = "") {
     paypalLink.textContent = "Préparation du paiement…";
     const popup = window.open("about:blank", "_blank");
     try {
-      let savedPayment = payment;
-      if (!payment.paymentId) {
-        savedPayment = await api("/api/payments/manual", {
-          method: "POST",
-          body: JSON.stringify({ planId, contactEmail, paymentCode: payment.paymentCode })
-        });
-      }
+      const savedPayment = payment;
       if (popup) {
         popup.opener = null;
         popup.location = savedPayment.paypalUrl;
@@ -151,13 +145,63 @@ async function api(path, options = {}) {
   return data;
 }
 
+function showAuthDialog(mode = "signup") {
+  if (offlinePreview) { toast("L’inscription est disponible lorsque le serveur ModuBot est démarré."); return; }
+  const dialog = document.createElement("dialog");
+  dialog.className = "payment-dialog auth-dialog";
+  let signup = mode === "signup";
+  const draw = () => {
+    dialog.innerHTML = `<form class="payment-dialog-card" id="account-auth-form">
+      <button class="payment-dialog-close" type="button" aria-label="Fermer">×</button>
+      <span class="eyebrow"><span></span> ESPACE MODUBOT</span>
+      <h2>${signup ? "Crée ton compte" : "Content de te revoir"}</h2>
+      <p>${signup ? "Choisis un pseudo, une adresse e-mail et un mot de passe pour retrouver tes projets et tes demandes." : "Connecte-toi avec l’adresse e-mail et le mot de passe de ton compte."}</p>
+      ${signup ? `<label for="auth-username">Pseudo</label><input id="auth-username" name="username" minlength="2" maxlength="32" autocomplete="nickname" placeholder="Ex. Camille" required>` : ""}
+      <label for="auth-email">Adresse e-mail</label><input id="auth-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="toi@exemple.fr" required>
+      <label for="auth-password">Mot de passe</label><input id="auth-password" name="password" type="password" minlength="10" maxlength="128" autocomplete="${signup ? "new-password" : "current-password"}" placeholder="${signup ? "10 caractères minimum" : "Ton mot de passe"}" required>
+      <p class="auth-error" role="alert" hidden></p>
+      <div class="payment-dialog-actions"><button class="button button-outline" type="button" data-switch-auth>${signup ? "J’ai déjà un compte" : "Créer un compte"}</button><button class="button button-primary" type="submit">${signup ? "Créer mon espace" : "Se connecter"}</button></div>
+      <small class="payment-dialog-privacy">Ton mot de passe est haché avant stockage. Utilise un mot de passe unique.</small>
+    </form>`;
+    const form = dialog.querySelector("form");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submit = form.querySelector('[type="submit"]');
+      const errorBox = form.querySelector(".auth-error");
+      submit.disabled = true;
+      submit.textContent = "Connexion…";
+      errorBox.hidden = true;
+      try {
+        await api(signup ? "/api/auth/signup" : "/api/auth/login", { method: "POST", body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+        location.assign("/app");
+      } catch (error) {
+        errorBox.textContent = error.message;
+        errorBox.hidden = false;
+        submit.disabled = false;
+        submit.textContent = signup ? "Créer mon espace" : "Se connecter";
+      }
+    });
+    dialog.querySelector(".payment-dialog-close").addEventListener("click", () => dialog.close());
+    dialog.querySelector("[data-switch-auth]").addEventListener("click", () => { signup = !signup; draw(); });
+  };
+  draw();
+  dialog.addEventListener("close", () => dialog.remove(), { once: true });
+  document.body.append(dialog);
+  dialog.showModal();
+  dialog.querySelector("input")?.focus();
+}
+
+topActions.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-open-auth]");
+  if (button) { event.preventDefault(); showAuthDialog(button.dataset.openAuth); }
+});
+
 let offlinePreview = location.protocol === "file:";
-const loginUrl = () => offlinePreview ? "#demo" : "/auth/discord";
 
 function renderLanding() {
   topActions.innerHTML = offlinePreview
     ? `<a class="button button-outline button-compact" href="#demo">Ouvrir l’aperçu</a>`
-    : `<a class="button button-quiet" href="${loginUrl()}">Connexion</a><a class="button button-primary button-compact" href="${loginUrl()}">Créer mon espace <span>↗</span></a>`;
+    : `<button class="button button-quiet" type="button" data-open-auth="login">Connexion</button><button class="button button-primary button-compact" type="button" data-open-auth="signup">Créer mon espace <span>↗</span></button>`;
   const cards = config.modules.map((module, index) => `
     <article class="feature-card"><span class="feature-index">0${index + 1}</span><div class="feature-icon icon-${escapeHtml(module.id)}">${escapeHtml(module.icon || "✦")}</div><h3>${escapeHtml(module.name)}</h3><p>${escapeHtml(module.description)}</p></article>`).join("");
   const plans = config.plans.map((plan) => `
@@ -166,7 +210,7 @@ function renderLanding() {
       <span class="plan-name">${escapeHtml(plan.name)}</span>
       <div class="plan-price">${plan.priceCents ? money(plan.priceCents) : "Gratuit"}<small>${plan.priceCents ? "/ 30 jours" : "pour commencer"}</small></div>
       <p>Jusqu’à <b>${plan.maxBots} bot${plan.maxBots > 1 ? "s" : ""}</b> dans ton espace</p>
-      <a class="button ${plan.featured ? "button-primary" : "button-outline"} plan-cta" href="${loginUrl()}">${plan.id === "free" ? "Commencer" : "Choisir ce forfait"}</a>
+      <button class="button ${plan.featured ? "button-primary" : "button-outline"} plan-cta" type="button" data-open-auth="signup">${plan.id === "free" ? "Commencer" : "Choisir ce forfait"}</button>
     </article>`).join("");
   root.innerHTML = `${offlinePreview ? `<aside class="preview-notice"><b>Aperçu visuel</b><span>Parcours le tableau de bord démo. Aucun token ni paiement n’est envoyé.</span></aside>` : ""}
     <section class="hero-section">
@@ -174,8 +218,8 @@ function renderLanding() {
         <div class="eyebrow"><span></span> TON ESPACE DISCORD, ENFIN CLAIR</div>
         <h1>Tes bots.<br><em>Tes règles.</em><br>Tout au même endroit.</h1>
         <p class="hero-lede">Configure les commandes utiles, garde tes clés privées et pilote tes bots depuis un tableau de bord simple.</p>
-        <div class="hero-actions"><a class="button button-primary button-large" href="${loginUrl()}">${offlinePreview ? "Ouvrir le tableau de bord" : "Continuer avec Discord"} <span>↗</span></a><a class="text-link" href="#modules">Découvrir les modules <span>↓</span></a></div>
-        <div class="hero-proof"><div class="proof-avatar">M</div><div><b>Un seul espace, plusieurs bots</b><span>Compte Discord · réglages par bot · journaux privés</span></div></div>
+        <div class="hero-actions"><button class="button button-primary button-large" type="button" data-open-auth="signup">Créer mon espace <span>↗</span></button><a class="text-link" href="#modules">Découvrir les modules <span>↓</span></a></div>
+        <div class="hero-proof"><div class="proof-avatar">M</div><div><b>Un seul espace, plusieurs bots</b><span>Compte e-mail · réglages par bot · journaux privés</span></div></div>
       </div>
       <div class="hero-preview" aria-label="Aperçu du tableau de bord">
         <div class="preview-window"><div class="preview-top"><span class="window-dots"><i></i><i></i><i></i></span><span>MON ESPACE / VUE D’ENSEMBLE</span><span class="preview-live"><i></i> EN LIGNE</span></div>
@@ -194,8 +238,8 @@ function renderLanding() {
     <section class="trust-strip"><span>CONFIDENTIALITÉ PAR DÉFAUT</span><i></i><span>COMMANDES SLASH DISCORD</span><i></i><span>VALIDATION MANUELLE DES ACCÈS PAYANTS</span></section>
     <section class="section-block" id="modules"><div class="section-heading"><div><div class="eyebrow"><span></span> UNE CONFIGURATION QUI TE RESSEMBLE</div><h2>Les bons outils,<br><em>sans le bruit.</em></h2></div><p>Choisis les fonctions utiles. Modifie-les quand tu veux. Le bot synchronise les commandes slash activées sur Discord.</p></div><div class="feature-grid">${cards}</div></section>
     <section class="security-band" id="confidentialite"><div class="security-mark">⌑</div><div><div class="eyebrow"><span></span> CLÉS PRIVÉES, TRAITÉES COMME TELLES</div><h2>Un token reste<br><em>à sa place : secret.</em></h2><p>Le token est envoyé au serveur en HTTPS, chiffré avant stockage, jamais réaffiché et jamais écrit dans les journaux. Tu peux retirer ton bot pour supprimer sa clé.</p></div><div class="security-points"><span>✓ Chiffrement côté serveur</span><span>✓ Aucun token dans Discord</span><span>✓ Événements conservés 30 jours</span></div></section>
-    <section class="section-block pricing-section" id="offres"><div class="section-heading"><div><div class="eyebrow"><span></span> GRANDIR À TON RYTHME</div><h2>Un espace pour<br><em>chaque étape.</em></h2></div><p>Les forfaits payants durent 30 jours. Les paiements PayPal sont examinés avant l’activation des quotas.</p></div><div class="plan-grid">${plans}</div><div class="payment-guide"><div class="eyebrow"><span></span> PAYER AVEC PAYPAL.ME</div><h3>Comment activer ton forfait ?</h3><ol><li><b>Choisis un forfait</b><span>Connecte-toi avec Discord, puis indique ton e-mail de contact.</span></li><li><b>Copie ta référence</b><span>Un code à huit chiffres apparaît. Le bouton PayPal reste bloqué tant que tu ne l’as pas copié.</span></li><li><b>Envoie le montant affiché</b><span>PayPal.Me ouvre le bon montant pour FCSTslyz. Colle le code dans la note si PayPal propose ce champ et choisis « Biens et services » pour cet achat.</span></li><li><b>Déclare le paiement</b><span>Reviens dans ton espace et clique sur « J’ai payé ». L’accès est activé après vérification manuelle dans PayPal.</span></li></ol><p>PayPal.Me ne confirme pas le transfert au site. Le code aide à retrouver la transaction et ne prouve pas le paiement.</p></div><p class="pricing-footnote">Les prix et capacités sont configurables par l’administrateur. L’hébergement dépend de la capacité réelle du serveur.</p></section>
-    <section class="bottom-cta"><div class="cta-spark">✳</div><h2>Prêt à mieux piloter<br><em>tes bots Discord ?</em></h2><p>Ouvre ton espace privé en quelques secondes avec ton compte Discord.</p><a class="button button-primary button-large" href="${loginUrl()}">Créer mon espace <span>↗</span></a></section>
+    <section class="section-block pricing-section" id="offres"><div class="section-heading"><div><div class="eyebrow"><span></span> GRANDIR À TON RYTHME</div><h2>Un espace pour<br><em>chaque étape.</em></h2></div><p>Les forfaits payants durent 30 jours. Les paiements PayPal sont examinés avant l’activation des quotas.</p></div><div class="plan-grid">${plans}</div><div class="payment-guide"><div class="eyebrow"><span></span> PAYER AVEC PAYPAL.ME</div><h3>Comment activer ton forfait ?</h3><ol><li><b>Choisis un forfait</b><span>Crée ton compte ModuBot avec un pseudo, un e-mail et un mot de passe.</span></li><li><b>Copie ta référence</b><span>Le serveur enregistre la demande et affiche un code unique à huit chiffres. Le bouton PayPal reste bloqué tant que tu ne l’as pas copié.</span></li><li><b>Envoie le montant affiché</b><span>PayPal.Me ouvre le bon montant pour FCSTslyz. Colle le code dans la note si PayPal propose ce champ.</span></li><li><b>Déclare le paiement</b><span>Reviens dans ton espace et clique sur « J’ai payé ». L’accès est activé après vérification manuelle dans PayPal.</span></li></ol><p>PayPal.Me ne confirme pas le transfert au site. Le code aide à retrouver la transaction et ne prouve pas le paiement.</p></div><p class="pricing-footnote">Les prix et capacités sont configurables par l’administrateur. L’hébergement dépend de la capacité réelle du serveur.</p></section>
+    <section class="bottom-cta"><div class="cta-spark">✳</div><h2>Prêt à mieux piloter<br><em>tes bots Discord ?</em></h2><p>Ouvre ton espace privé en quelques secondes avec un compte ModuBot.</p><button class="button button-primary button-large" type="button" data-open-auth="signup">Créer mon espace <span>↗</span></button></section>
     <p class="legal-note">Le site ne demande jamais ton mot de passe Discord. Pour PayPal.Me, l’adresse e-mail de contact et la référence de paiement sont visibles uniquement par l’administrateur afin de vérifier la transaction et d’activer l’accès.</p>`;
 }
 
@@ -290,7 +334,7 @@ function renderDashboard() {
   const planMarkup = config.plans.map((item) => {
     const canBuy = item.id === "free" || (config.payments.enabled && account.availablePlans.includes(item.id));
     const active = item.id === plan.id;
-    const unavailableLabel = hasOpenPayment ? "Demande en cours" : config.payments.enabled ? "Capacité indisponible" : "Paiements à configurer";
+    const unavailableLabel = hasOpenPayment ? "Demande en cours" : config.payments.enabled ? "Capacité d’hébergement insuffisante" : "PayPal à configurer sur le serveur";
     const features = config.modules.filter((module) => (item.rank || 0) >= (config.plans.find((tier) => tier.id === module.requiredPlanId)?.rank || 0)).map((module) => module.name);
     let cta;
     if (active) cta = `<span class="plan-current-label">Ton forfait actuel</span>`;
@@ -305,7 +349,7 @@ function renderDashboard() {
     ? "PayPal Checkout confirme le paiement. Tu peux examiner les demandes et activer les forfaits dans /admin."
     : config.payments.manual
       ? "PayPal.Me ouvre ton compte PayPal. Après le paiement, déclare-le ici ; le propriétaire vérifie la transaction avant d’activer les quotas."
-      : "Les paiements seront disponibles lorsque l’hébergement et ses capacités seront configurés.";
+      : "Le bouton reste désactivé tant que le serveur n’a pas PayPal.Me et PAYMENTS_ENABLED=true configurés, avec une capacité suffisante.";
   const avatar = user.avatarUrl ? `<img src="${escapeHtml(user.avatarUrl)}" alt="">` : `<span class="account-avatar">${escapeHtml((user.username || "M").slice(0, 1).toUpperCase())}</span>`;
   root.innerHTML = `<div class="workspace-shell">
     <aside class="workspace-sidebar">
@@ -423,11 +467,12 @@ function bindDashboardActions() {
           button.textContent = original;
           return;
         }
-        let paymentCode;
-        const random = new Uint32Array(1);
-        crypto.getRandomValues(random);
-        paymentCode = String(random[0] % 100_000_000).padStart(8, "0");
-        showManualPaymentSteps({ paymentCode }, planId, contact.email);
+        const savedPayment = await api("/api/payments/manual", {
+          method: "POST",
+          body: JSON.stringify({ planId, contactEmail: contact.email })
+        });
+        showManualPaymentSteps({ paymentId: savedPayment.paymentId, paymentCode: savedPayment.paymentCode, paypalUrl: savedPayment.paypalUrl }, planId, contact.email);
+        refresh().catch(() => {});
       }
     } catch (error) {
       button.disabled = false;

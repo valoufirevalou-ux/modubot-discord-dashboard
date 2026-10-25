@@ -14,6 +14,8 @@ db.exec(`
     id TEXT PRIMARY KEY,
     username TEXT NOT NULL,
     avatar TEXT,
+    email TEXT,
+    password_hash TEXT,
     plan_id TEXT NOT NULL DEFAULT 'free',
     plan_expires_at TEXT,
     created_at TEXT NOT NULL,
@@ -88,6 +90,11 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS payment_owner_idx ON payment_intents(owner_id, created_at DESC);
 `);
 
+const userColumns = db.prepare("PRAGMA table_info(users)").all();
+if (!userColumns.some((column) => column.name === "email")) db.exec("ALTER TABLE users ADD COLUMN email TEXT");
+if (!userColumns.some((column) => column.name === "password_hash")) db.exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_idx ON users(email) WHERE email IS NOT NULL");
+
 const botColumns = db.prepare("PRAGMA table_info(bots)").all();
 if (!botColumns.some((column) => column.name === "project_name")) {
   db.exec("ALTER TABLE bots ADD COLUMN project_name TEXT NOT NULL DEFAULT ''");
@@ -114,6 +121,23 @@ export function upsertUser({ id, username, avatar }) {
     VALUES (@id, @username, @avatar, @stamp, @stamp)
     ON CONFLICT(id) DO UPDATE SET username=excluded.username, avatar=excluded.avatar, last_seen_at=excluded.last_seen_at`)
     .run({ id, username, avatar: avatar || null, stamp });
+  return getUser(id);
+}
+
+export function createEmailUser({ id, username, email, passwordHash }) {
+  const stamp = now();
+  db.prepare(`INSERT INTO users (id, username, email, password_hash, created_at, last_seen_at)
+    VALUES (@id, @username, @email, @passwordHash, @stamp, @stamp)`)
+    .run({ id, username, email, passwordHash, stamp });
+  return getUser(id);
+}
+
+export function getUserByEmail(email) {
+  return db.prepare("SELECT * FROM users WHERE email = ? COLLATE NOCASE").get(email) ?? null;
+}
+
+export function touchUser(id) {
+  db.prepare("UPDATE users SET last_seen_at = ? WHERE id = ?").run(now(), id);
   return getUser(id);
 }
 

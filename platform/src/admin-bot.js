@@ -53,7 +53,9 @@ export async function notifyAdmin({ type = "site_event", title, summary, userId 
   if (userId) {
     const user = getUser(userId);
     const username = String(user?.username || "Utilisateur Discord").replace(/[`*_~|]/g, "").slice(0, 80);
-    embed.addFields({ name: "Compte Discord", value: `**${username}**\n\`${userId}\``, inline: true });
+    const accountLabel = user?.email ? "Compte ModuBot" : "Compte Discord";
+    const accountValue = user?.email ? `**${username}**` : `**${username}**\n\`${userId}\``;
+    embed.addFields({ name: accountLabel, value: accountValue, inline: true });
   }
   const results = await Promise.all(channels.map(async ({ guild_id: guildId, log_channel_id: channelId }) => {
     const channel = adminClient.channels.cache.get(channelId)

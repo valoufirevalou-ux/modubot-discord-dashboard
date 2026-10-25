@@ -17,6 +17,7 @@ import {
   claimPayment,
   countBotsForUser,
   createPayment,
+  createEmailUser,
   getBot,
   getBotByDiscordId,
   getBotsForUser,
@@ -27,11 +28,13 @@ import {
   getPaymentByCode,
   getOpenPaymentForUser,
   getUser,
+  getUserByEmail,
   insertBot,
   pruneEvents,
   rejectPayment,
   setPaymentOrder,
   setPaymentStatus,
+  touchUser,
   updateBotConfig,
   upsertUser
 } from "./store.js";
@@ -102,6 +105,7 @@ app.use(express.static(path.join(here, "..", "public"), { maxAge: process.env.NO
 const apiLimit = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false });
 const sensitiveLimit = rateLimit({ windowMs: 10 * 60_000, limit: 12, standardHeaders: "draft-8", legacyHeaders: false });
 const adminLoginLimit = rateLimit({ windowMs: 15 * 60_000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false });
+const accountAuthLimit = rateLimit({ windowMs: 15 * 60_000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false });
 
 function sameOrigin(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
@@ -131,7 +135,7 @@ function authConfigurationReady() {
 }
 
 function publicAvatar(user) {
-  if (!user.avatar) return `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(user.id) % 6n)}.png`;
+  if (!user.avatar) return `https://cdn.discordapp.com/embed/avatars/${Number.parseInt(user.id.slice(-1), 10) % 6 || 0}.png`;
   return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
 }
 
@@ -225,6 +229,57 @@ app.use("/api", (req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   next();
 }, sameOrigin, apiLimit);
+
+function passwordDigest(password, salt = crypto.randomBytes(16)) {
+  return new Promise((resolve, reject) => crypto.scrypt(password, salt, 64, (error, key) => {
+    if (error) return reject(error);
+    resolve(`scrypt$${salt.toString("base64url")}$${key.toString("base64url")}`);
+  }));
+}
+
+async function passwordMatches(password, digest) {
+  const [algorithm, saltText, keyText] = String(digest || "").split("$");
+  if (algorithm !== "scrypt" || !saltText || !keyText) return false;
+  const expected = Buffer.from(keyText, "base64url");
+  const actual = await new Promise((resolve, reject) => crypto.scrypt(password, Buffer.from(saltText, "base64url"), expected.length, (error, key) => error ? reject(error) : resolve(key)));
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+app.post("/api/auth/signup", accountAuthLimit, async (req, res, next) => {
+  const username = typeof req.body?.username === "string" ? req.body.username.trim() : "";
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (username.length < 2 || username.length > 32 || !/^[\p{L}\p{N}_. -]+$/u.test(username)) return res.status(400).json({ error: "Le pseudo doit contenir 2 à 32 caractères (lettres, chiffres, espaces, . _ ou -)." });
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Saisis une adresse e-mail valide." });
+  if (password.length < 10 || password.length > 128) return res.status(400).json({ error: "Choisis un mot de passe de 10 à 128 caractères." });
+  if (getUserByEmail(email)) return res.status(409).json({ error: "Un compte utilise déjà cette adresse e-mail. Connecte-toi plutôt." });
+  try {
+    const passwordHash = await passwordDigest(password);
+    const user = createEmailUser({ id: randomId(), username, email, passwordHash });
+    req.session = { userId: user.id };
+    addEvent(user.id, "account_created", "Compte ModuBot créé");
+    await notifyAdmin({ type: "account_connected", title: "Nouveau compte ModuBot", summary: `${user.username} a créé un espace`, userId: user.id });
+    res.status(201).json({ user: { id: user.id, username: user.username } });
+  } catch (error) {
+    if (error.code === "SQLITE_CONSTRAINT_UNIQUE") return res.status(409).json({ error: "Un compte utilise déjà cette adresse e-mail." });
+    next(error);
+  }
+});
+
+app.post("/api/auth/login", accountAuthLimit, async (req, res, next) => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (email.length > 254 || password.length > 128) return res.status(401).json({ error: "Adresse e-mail ou mot de passe incorrect." });
+  try {
+    const user = getUserByEmail(email);
+    if (!user?.password_hash || !(await passwordMatches(password, user.password_hash))) return res.status(401).json({ error: "Adresse e-mail ou mot de passe incorrect." });
+    const refreshed = touchUser(user.id);
+    req.session = { userId: refreshed.id };
+    addEvent(refreshed.id, "account_connected", "Connexion à ModuBot");
+    await notifyAdmin({ type: "account_connected", title: "Connexion au site", summary: `${refreshed.username} a ouvert son espace ModuBot`, userId: refreshed.id });
+    res.json({ user: { id: refreshed.id, username: refreshed.username } });
+  } catch (error) { next(error); }
+});
 
 app.post("/api/admin/login", adminLoginLimit, (req, res) => {
   const expected = process.env.ADMIN_ACCESS_CODE || "";
@@ -321,7 +376,7 @@ app.get("/api/me", async (req, res, next) => {
     const paymentsAvailable = paymentsEnabled && (checkoutReady || manualPayPalReady);
     const canPurchase = paymentsAvailable && !getOpenPaymentForUser(user.id);
     res.json({
-      user: { id: user.id, username: user.username, avatarUrl: publicAvatar(user) },
+      user: { id: user.id, username: user.username, email: user.email || null, avatarUrl: publicAvatar(user) },
       plan: { id: plan.id, name: plan.name, maxBots: plan.maxBots, expiresAt: plan.id === "free" ? null : user.plan_expires_at },
       availableModules: modulesForPlan(plan),
       bots,
@@ -455,17 +510,16 @@ function createPaymentRow(userId, plan, method, contactEmail = null, requestedPa
 app.post("/api/payments/manual", requireAuth, sensitiveLimit, async (req, res, next) => {
   const plan = findPlan(req.body?.planId);
   const contactEmail = typeof req.body?.contactEmail === "string" ? req.body.contactEmail.trim() : "";
-  const paymentCode = typeof req.body?.paymentCode === "string" ? req.body.paymentCode : "";
   if (!paymentsEnabled || !manualPayPalReady) return res.status(503).json({ error: "Le paiement PayPal.Me n’est pas activé." });
   if (plan.id === "free") return res.status(400).json({ error: "Le forfait gratuit ne demande pas de paiement." });
   if (contactEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
     return res.status(400).json({ error: "Saisis une adresse e-mail valide pour recevoir l’accès au forfait." });
   }
-  if (!/^\d{8}$/.test(paymentCode)) return res.status(400).json({ error: "La référence PayPal doit contenir huit chiffres. Ferme et recommence la fenêtre de paiement." });
-  if (getPaymentByCode(paymentCode)) return res.status(409).json({ error: "Cette référence existe déjà. Ferme et recommence la fenêtre pour en générer une nouvelle." });
   if (getOpenPaymentForUser(req.user.id)) return res.status(409).json({ error: "Tu as déjà une demande PayPal ouverte. Termine-la ou annule-la avant d’en créer une autre." });
   if (!canAllocatePlan(req.user.id, plan.id, maxHostedBots)) return res.status(503).json({ error: "La capacité actuelle ne permet pas de vendre ce forfait." });
   try {
+    let paymentCode;
+    do { paymentCode = String(crypto.randomInt(0, 100_000_000)).padStart(8, "0"); } while (getPaymentByCode(paymentCode));
     const payment = createPaymentRow(req.user.id, plan, "paypal_me", contactEmail, paymentCode);
     const paypalUrl = `${paypalMeUrl.replace(/\/$/, "")}/${(plan.priceCents / 100).toFixed(2)}EUR`;
     res.status(201).json({ paymentId: payment.id, paymentCode: payment.payment_code, paypalUrl });
