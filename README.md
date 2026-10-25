@@ -1,6 +1,6 @@
 # ModuBot — maquette interactive
 
-Prototype front-end autonome en français pour un tableau de bord de configuration de bot Discord. Il présente 14 modules avec une répartition gratuite et payante, quatre forfaits et une bibliothèque de plus de 120 commandes de démonstration.
+La racine du dépôt est une maquette front-end statique en français. Le backend complet est dans `platform/` et comprend maintenant une inscription avec pseudo, e-mail et mot de passe, une connexion par e-mail/mot de passe, une base SQLite et des demandes PayPal.Me enregistrées avant l’ouverture de PayPal.
 
 ## Ouvrir la maquette
 
@@ -8,7 +8,7 @@ Ouvre `index.html` dans un navigateur récent. Aucun serveur, compte ou paquet �
 
 ## Ce qui fonctionne dans la démo
 
-- L’écran d’accueil et les formulaires visuels d’inscription/connexion.
+- L’écran d’accueil et les formulaires visuels d’inscription/connexion. Dans cette maquette seule, ils ne créent pas de compte réel.
 - Le tableau de bord, la navigation entre les pages et les interrupteurs des modules.
 - Les modules Utilitaires et Jeux & fun sont gratuits. Les autres modules affichent le forfait requis et renvoient vers la page Forfaits.
 - Les forfaits affichés sont Gratuit (1 bot), Mod (2 bots, 4,99 €), Pro (8 bots, 9,99 €) et Ultime (25 bots, 29,99 €), pour 30 jours.
@@ -19,6 +19,6 @@ Ouvre `index.html` dans un navigateur récent. Aucun serveur, compte ou paquet �
 
 ## Publication et backend
 
-La racine de ce dépôt reste une maquette statique. GitHub Pages peut publier cette interface, mais ne peut pas exécuter le backend Node. La version complète est dans `platform/` : déploie ce dossier sur un hébergeur Node avec stockage persistant, configure les variables de `platform/.env.example` dans les secrets de l’hébergeur, puis utilise l’URL HTTPS du serveur pour le site. Garde `PAYMENTS_ENABLED=false` jusqu’à ce que l’authentification Discord, PayPal et la capacité réelle d’hébergement soient configurées.
+La racine de ce dépôt reste une maquette statique. GitHub Pages peut publier cette interface, mais ne peut pas exécuter le backend Node : ses formulaires et ses boutons de paiement restent donc désactivés/non persistants. La version complète est dans `platform/` : déploie ce dossier sur un hébergeur Node avec stockage persistant, configure les variables de `platform/.env.example` dans les secrets de l’hébergeur, puis utilise l’URL HTTPS du serveur pour le site. L’inscription et la connexion par e-mail fonctionnent avec le backend sans OAuth Discord. Garde `PAYMENTS_ENABLED=false` jusqu’à ce que PayPal et la capacité réelle d’hébergement soient configurés.
 
 Le backend stocke la demande PayPal avant d’ouvrir le lien PayPal.Me et permet à l’administrateur de vérifier le transfert. PayPal ne préremplit pas le champ de note : le client doit coller le code lui-même. Les commandes bot sont hébergées uniquement quand le serveur Node est en ligne. Ne saisis jamais de secret dans la maquette statique ni dans GitHub.

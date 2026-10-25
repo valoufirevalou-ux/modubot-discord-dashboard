@@ -42,10 +42,10 @@ Place le premier résultat dans `SESSION_SECRET` et le second dans `TOKEN_ENCRYP
 
 ## Secrets et réglages Discord
 
-Dans le portail développeur Discord, configure l’application qui servira au site et au bot opérateur :
+Pour activer les comptes e-mail, seule une configuration sécurisée du serveur est requise. Les variables Discord ci-dessous sont facultatives pour une connexion OAuth ou le bot privé de journaux ; les bots clients nécessitent toujours leur propre token quand un utilisateur crée un projet :
 
 1. Révoque le token qui a été collé dans la conversation et génère un nouveau token de bot. Ne colle aucun token dans le chat ou dans GitHub.
-2. Renseigne `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` et `PLATFORM_BOT_TOKEN` dans les variables secrètes de l’hébergeur.
+2. Si tu actives Discord OAuth et les journaux, renseigne `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` et `PLATFORM_BOT_TOKEN` dans les variables secrètes de l’hébergeur. Sans ces valeurs, l’inscription et la connexion e-mail fonctionnent quand même ; l’invitation et le bot opérateur restent indisponibles.
 3. Ajoute comme URL OAuth2 de redirection : `https://TON-DOMAINE/auth/discord/callback`.
 4. Configure `APP_BASE_URL` avec exactement le domaine HTTPS qui servira l’application.
 5. Invite le bot opérateur sur ton serveur et donne-lui accès au salon privé `1563843691326476450`, avec les droits Voir le salon, Envoyer des messages et Intégrer des liens. Le salon doit être invisible pour `@everyone`.

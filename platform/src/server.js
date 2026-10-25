@@ -52,7 +52,7 @@ import {
 import { notifyAdmin, startAdminBot, stopAdminBot } from "./admin-bot.js";
 import { capturePayPalOrder, createPayPalOrder, isPayPalCheckoutReady, verifyPayPalWebhook } from "./paypal.js";
 
-const required = ["APP_BASE_URL", "SESSION_SECRET", "TOKEN_ENCRYPTION_KEY", "DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET", "PLATFORM_BOT_TOKEN"];
+const required = ["APP_BASE_URL", "SESSION_SECRET", "TOKEN_ENCRYPTION_KEY"];
 const missing = required.filter((name) => !process.env[name]);
 if (missing.length) throw new Error(`Configuration requise absente : ${missing.join(", ")}`);
 if (process.env.SESSION_SECRET.length < 32) throw new Error("SESSION_SECRET doit faire au moins 32 caractères.");
@@ -345,15 +345,19 @@ app.get("/api/config", (_req, res) => {
     PermissionFlagsBits.BanMembers,
     PermissionFlagsBits.ModerateMembers
   ]).toString();
-  const invite = new URL("https://discord.com/oauth2/authorize");
-  invite.searchParams.set("client_id", process.env.DISCORD_CLIENT_ID);
-  invite.searchParams.set("scope", "bot applications.commands");
-  invite.searchParams.set("permissions", permissions);
+  let inviteUrl = null;
+  if (process.env.DISCORD_CLIENT_ID) {
+    const invite = new URL("https://discord.com/oauth2/authorize");
+    invite.searchParams.set("client_id", process.env.DISCORD_CLIENT_ID);
+    invite.searchParams.set("scope", "bot applications.commands");
+    invite.searchParams.set("permissions", permissions);
+    inviteUrl = invite.toString();
+  }
   res.json({
     plans: publicPlans(),
     modules: MODULES,
     capacity: { maxHostedBots },
-    discordInviteUrl: invite.toString(),
+    discordInviteUrl: inviteUrl,
     payments: {
       enabled: paymentsEnabled && (checkoutReady || manualPayPalReady),
       checkout: checkoutReady,
